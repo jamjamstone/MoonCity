@@ -21,7 +21,7 @@ public class MainCanvasControl : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            GameManager.Instance.MenuBottonPressed?.Invoke();
+            GameManager.Instance.MenuBottonPressed?.Invoke();//error
         }
         if (Input.GetKeyDown(KeyCode.I))
         {

@@ -22,6 +22,7 @@ public class SafeZone : MonoBehaviour, IInteractable
 
 
         //GameManager.Instance.DataUpdate(temp);
+        
         GameManager.Instance.SaveGame();
     }
     //private void OnBecameVisible()

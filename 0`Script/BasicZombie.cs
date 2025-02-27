@@ -14,7 +14,7 @@ public class BasicZombie : Monster //hp,dmg,name,animator
     NavMeshAgent monsterAi;
     Rigidbody monsterSelfBody;
     Collider monsterSelfCollider;
-
+    public AudioSource monsterAudioSource;
     bool isDetecting=false;
     bool isDie = false;
     bool isAttacking = false;
@@ -36,11 +36,14 @@ public class BasicZombie : Monster //hp,dmg,name,animator
         monsterAi = GetComponent<NavMeshAgent>();
         monsterSelfBody = GetComponent<Rigidbody>();
         monsterSelfCollider = GetComponent<Collider>();
+        monsterAudioSource = GetComponent<AudioSource>();
         monsterHp = 200f;
        // monsterAnimator = GetComponent<Animator>();
         monsterState = MonsterState.None;
         monsterDmg = 10f;
         StartCoroutine(DetectPlayer());
+        StartCoroutine(ChangeState());
+        StartCoroutine(monsterSound());
     }
 
     // Update is called once per frame
@@ -63,21 +66,25 @@ public class BasicZombie : Monster //hp,dmg,name,animator
                 foreach (Collider collider in colliders)
                 {
                     targetPlayer = collider.transform;
-                    if ((targetPlayer.position-transform.position).magnitude>attackRadius)
+                    if ((targetPlayer.position-transform.position).magnitude>attackRadius)//플레이어가 공격 범위 바깥이면
                     {
-                        //Debug.Log("monsterstart");
+                        Debug.Log("monsterdetect");//플레이어 탐지함
                         isDetecting = true;
                         monsterAi.isStopped = false;
                         isAttacking = false;
                         monsterState = MonsterState.Detect;
+                        monsterAnimator.SetBool("isWalk", true);
+                        monsterAnimator.SetBool("isAttack", false);
                     }
-                    else
+                    else//공격범위 안쪽이면
                     {
-                        //Debug.Log("monsterstop");
+                        Debug.Log("monsterattack");
                         isDetecting=false;
                         monsterAi.isStopped = true;
                         isAttacking = true;
-                        monsterState= MonsterState.Attack;
+                        monsterState= MonsterState.Attack;//공격함
+                        monsterAnimator.SetBool("isAttack", true);
+                        monsterAnimator.SetBool("isWalk", false);
 
                     }
                     //isDetecting = true;
@@ -94,13 +101,24 @@ public class BasicZombie : Monster //hp,dmg,name,animator
                 isDetecting = false;
                 isAttacking= false;
                 monsterAi.isStopped = true;// 처음 시작할 때 멈추는 부분이 존재해서 이를 다시 해결해주지 않아 추격을 영원히 멈추는 현상 발생 -> 해결!
+                monsterAnimator.SetBool("isAttack", false);
+                monsterAnimator.SetBool("isWalk", false);
             }
             yield return new WaitForSeconds(0.5f);
         }
         
     }
 
+    IEnumerator monsterSound()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(5f);
+            monsterAudioSource.Play();
 
+
+        }
+    }
 
 
     IEnumerator ChangeState()
@@ -108,7 +126,13 @@ public class BasicZombie : Monster //hp,dmg,name,animator
         while (monsterState!=MonsterState.Die)
         {
             yield return new WaitForSeconds(0.5f);
-            
+            //Debug.Log(monsterSelfBody.velocity.magnitude);
+            if (monsterSelfBody.velocity.magnitude > 0.01f)
+            {
+                
+                monsterState = MonsterState.Move;
+                monsterAnimator.SetBool("isWalk", true);
+            }
 
 
 
@@ -118,19 +142,36 @@ public class BasicZombie : Monster //hp,dmg,name,animator
 
         }
     }
+    public void SetState()
+    {
 
-
+    }
+    public void RandomPatrol()
+    {
+        monsterSelfBody.velocity = new Vector3(UnityEngine.Random.Range(0, 5), 0, UnityEngine.Random.Range(0, 5));
+    }
 
     public void Dead()
     {
         monsterSelfCollider.enabled = false;
+        monsterState = MonsterState.Die;
+        isDie = true;
+        monsterAnimator.SetBool("isAttack", false);
+        monsterAnimator.SetBool("isWalk", false);
         monsterAnimator.SetTrigger("Dead");
+
         GameManager.Instance.LockOnDead(transform);
 
-        Destroy(gameObject);
+        Destroy(gameObject,1);
 
     }
+    IEnumerator Hitduration()
+    {
+        yield return new WaitForSeconds(1f);
+        isHitting = false;
 
+
+    }
 
 
     private void OnTriggerEnter(Collider other)
@@ -142,11 +183,18 @@ public class BasicZombie : Monster //hp,dmg,name,animator
         }
         if (other.gameObject.layer == LayerMask.NameToLayer("PlayerSword"))
         {
-            Debug.Log("monsterhit");
-            monsterHp-=GameManager.Instance.playerDamage;
+            if (GameManager.isPlayerAttack == true)
+            {
+                //Debug.Log("monsterhit");
+                monsterAnimator.SetTrigger("isHit");
+                StartCoroutine(Hitduration());
+                monsterHp -= GameManager.Instance.playerDamage;
+                isHitting = true;
+            }
             if(monsterHp <= 0)
             {
-                isHitting = true;
+                isDie = true;
+                StopAllCoroutines();
                 monsterHp = 0;
                 monsterState = MonsterState.Die;
                 Dead();
@@ -154,13 +202,13 @@ public class BasicZombie : Monster //hp,dmg,name,animator
         }
     }
 
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.gameObject.layer == LayerMask.NameToLayer("PlayerSword"))
-        {
-            isHitting = false;
-        }
-    }
+    //private void OnTriggerExit(Collider other)
+    //{
+    //    if (other.gameObject.layer == LayerMask.NameToLayer("PlayerSword"))
+    //    {
+    //        isHitting = false;
+    //    }
+    //}
 
 
     //private void OnTriggerStay(Collider other)

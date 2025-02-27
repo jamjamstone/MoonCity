@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +10,7 @@ public class MenuControl : MonoBehaviour
 
     public Button[] buttons;
     bool isEnable=false;
-
+    public TMP_Text text;
     // Start is called before the first frame update
     void Start()
     {
@@ -21,6 +22,8 @@ public class MenuControl : MonoBehaviour
 
        
         GameManager.Instance.MenuBottonPressed.AddListener(DecideMenuOpen);
+        GameManager.Instance.OnPlayerDie.AddListener(ShowYouDie);
+        
         gameObject.SetActive(false);
     }
 
@@ -29,7 +32,12 @@ public class MenuControl : MonoBehaviour
     {
         
     }
-
+    public void ShowYouDie()
+    {
+        isEnable = true;
+        gameObject.SetActive(true);
+        text.gameObject.SetActive(true);//error
+    }
     // Update is called once per frame
     //void Update()
     //{
@@ -42,12 +50,14 @@ public class MenuControl : MonoBehaviour
         {
 
             gameObject.SetActive(false);//메뉴를 끄고
+            text.gameObject.SetActive(false);
             isEnable = false;//플래그 끄기
         }
         else//메뉴가 켜져있지 않다면
         {
             isEnable = true;
             gameObject.SetActive(true);
+            text.gameObject.SetActive(false);
         }
     }
     IEnumerator PressMenu()
@@ -59,7 +69,7 @@ public class MenuControl : MonoBehaviour
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.MenuBottonPressed.RemoveListener(DecideMenuOpen);
+            GameManager.Instance.MenuBottonPressed.RemoveAllListeners();
         }
     }
 

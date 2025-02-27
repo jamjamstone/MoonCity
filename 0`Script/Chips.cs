@@ -102,13 +102,16 @@ public class Chips : MonoBehaviour,IInteractable
     {
         player = null;
         GameManager.isCanInteract = false;
-        if (GameManager.Instance.interactables.Contains(this))
+        if (GameManager.Instance != null)
         {
-            GameManager.Instance.interactables.Remove(this);
+            if (GameManager.Instance.interactables.Contains(this))
+            {
+                GameManager.Instance.interactables.Remove(this);
+            }
+
+            GameManager.Instance.OnInteract?.RemoveListener(Interact);
+            GameManager.Instance.DecideInteractBoxShow();
         }
-    
-        GameManager.Instance.OnInteract?.RemoveListener(Interact);
-        GameManager.Instance.DecideInteractBoxShow();
     }
 
 }

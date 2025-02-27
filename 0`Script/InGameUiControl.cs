@@ -11,7 +11,7 @@ public class InGameUiControl : MonoBehaviour
     public TMP_Text interactBox;
     public ProgressBar hpBar;
     public float lastProgress;
-
+    
 
     // Start is called before the first frame update
     void Start()
@@ -19,7 +19,7 @@ public class InGameUiControl : MonoBehaviour
         interactBox.gameObject.SetActive(false);
         GameManager.Instance.InteractBoxShow.AddListener(ShowText);
         GameManager.Instance.OnInteractBoxHide.AddListener(DisableText);
-        GameManager.Instance.PlayerDataChange += UpdateHpBar;
+        GameManager.Instance.PlayerHPUpdate += UpdateHpBar;
         
     }
 
@@ -37,9 +37,9 @@ public class InGameUiControl : MonoBehaviour
     {
         interactBox.gameObject.SetActive(false);
     }
-    public void UpdateHpBar(PlayerDataForSave player)
+    public void UpdateHpBar(float playerNowHp)
     {
-        lastProgress=player.playerNowHp/ player.playerMaxHp ;
+        lastProgress=playerNowHp/ GameManager.Instance.GameData.playerData.playerMaxHp ;
         hpBar.SetProgress(lastProgress);
     }
 

@@ -22,6 +22,8 @@ public class PlayerMovement : MonoBehaviour
     Vector3 moveDir;
     Vector2 mouseDir;
     PlayerInput playerInput;
+    public AudioSource playerWalkSound;
+    public AudioSource playerAttackSound;
     //InputActionMap mainActionMap;
     //InputAction moveAction;
     //InputAction attackAction;
@@ -67,14 +69,29 @@ public class PlayerMovement : MonoBehaviour
         PlayerMaxHp = 100f;
         playerAnimator = GetComponent<Animator>();
         playerInput = GetComponent<PlayerInput>();
+        //playerAudioSource = GetComponent<AudioSource>();
         monsterLayerNum = LayerMask.GetMask("Monster");
         //lockOnRecord = new List<Collider>();
         PlayerNowHp = PlayerMaxHp;
         PlayerStamina = 100f;
+        StartCoroutine(PlayerMoveSound());
         GameManager.Instance.LockOnMonsterUpdate += LockOnMonsterDead;
         
         GameManager.Instance.PlayerDataChange += DownPlayerData;
+        GameManager.Instance.PlayerHPUpdate += UpdateHp;
+        GameManager.Instance.OnPlayerHit.AddListener(PlayerGetDamage);
         
+    }
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.LockOnMonsterUpdate -= LockOnMonsterDead;
+            GameManager.Instance.PlayerDataChange -= DownPlayerData;
+            GameManager.Instance.PlayerHPUpdate -= UpdateHp;
+            GameManager.Instance.OnPlayerHit.RemoveListener(PlayerGetDamage);
+        }
+
     }
 
     // Update is called once per frame
@@ -145,7 +162,19 @@ public class PlayerMovement : MonoBehaviour
     //    
     //}
 
+    IEnumerator PlayerMoveSound()
+    {
+        while(true)
+        {
+            if (moveDir != Vector3.zero)
+            {
+                //Debug.Log("tap");
+                playerWalkSound.Play();
+            }
+            yield return new WaitForSeconds(0.3f);
 
+        }
+    }
     
     #region 사용하지 않는
     public void OnDelta(InputValue value)// 마우스가 이동하는 방향으로 플레이어의 로테이션 이동을 생각했지만 다크소울에 가까운 특성상 락온일 경우에 방향을 고정하는 것으로 결정
@@ -157,7 +186,15 @@ public class PlayerMovement : MonoBehaviour
 
     }
     #endregion
+    public void PlayerDead()
+    {
+        //gameObject.
+    }
 
+    public void UpdateHp(float nowHp)
+    {
+        PlayerNowHp = nowHp;
+    }
     public void SearchTargetMonster()
     {
         //Ray ray = new Ray(transform.position,transform.forward);
@@ -360,6 +397,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector2 dir = value.Get<Vector2>();
         moveDir = new Vector3(dir.x, 0, dir.y);
+        //playerAudioSource.Play();
         playerAnimator.SetFloat("Move", dir.magnitude);//move는 이동량? 이동의 세기 정도 
         SetRunMotion(dir);
 
@@ -451,27 +489,44 @@ public class PlayerMovement : MonoBehaviour
         {
             return;
         }
+        playerAttackSound.Play();
         playerAnimator.SetTrigger("Attack");
         playerAnimator.SetInteger("ComboNum", ++comboNum);
         PlayerStamina -= 20;
         PlayerStamina= Mathf.Clamp(PlayerStamina, 0, 100);
         StaminaRecoveryTime = 0;
+        GameManager.isPlayerAttack = true;
     }
     
-    public void OnBlock(InputValue value)
+    public void OnBlock()
     {
-        Debug.Log(value);
+        //Debug.Log(value);
         //Debug.Log(value.)
-        playerAnimator.SetBool("Block",true);
-        
-        isBlock = true;
+        //playerAnimator.SetBool("Block",true);
+        //
+        //isBlock = true;
+
+        DecideBlock();
 
     }
-    public void EndBlock()
+    public void DecideBlock()
     {
-        playerAnimator.SetBool("Block", false);
-        isBlock = false;
+        if (GameManager.isBlock == true)
+        {
+            playerAnimator.SetBool("Block", false);
+            GameManager.isBlock = false;
+        }
+        else
+        {
+            playerAnimator.SetBool("Block", true);
+            GameManager.isBlock= true;
+        }
     }
+    //public void EndBlock()
+    //{
+    //    playerAnimator.SetBool("Block", false);
+    //    isBlock = false;
+    //}
    
     public void OnDodge()
     {
@@ -479,6 +534,12 @@ public class PlayerMovement : MonoBehaviour
         isDodge = true;
     }
     
+    public void PlayerGetDamage()
+    {
+        playerAnimator.SetTrigger("Hit");
+    }
+
+
     #endregion
     //private void OnCollisionEnter(Collision collision)//피격 판정 및 계산은 몬스터에 달아놓은 특수 콜라이더에서 실행하는 것이 좋아 보임
     //{

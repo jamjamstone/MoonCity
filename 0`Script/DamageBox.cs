@@ -11,7 +11,7 @@ public class DamageBox : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        monster=transform.root.GetComponent<Monster>();
+        //monster=transform.root.GetComponent<Monster>();
         player = LayerMask.NameToLayer("Player");
     }
 
@@ -33,8 +33,11 @@ public class DamageBox : MonoBehaviour
         //Debug.Log("hit");
         if (other.gameObject.layer == player)
         {
-            GameManager.Instance.PlayerHit(monster.monsterDmg);
-            isTouched = true;
+            if (GameManager.isPlayerHit == false)
+            {
+                GameManager.Instance.PlayerHit(monster.monsterDmg);
+                isTouched = true;
+            }
         }
     }
     private void OnTriggerStay(Collider other)
@@ -45,7 +48,7 @@ public class DamageBox : MonoBehaviour
     {
         if (other.gameObject.layer == player)
         {
-            GameManager.Instance.PlayerHit(monster.monsterDmg);
+            //GameManager.Instance.PlayerHit(monster.monsterDmg);
             isTouched = false;
         }
     }

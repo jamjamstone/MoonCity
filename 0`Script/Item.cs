@@ -12,7 +12,7 @@ public class Item
 
 public class InventoryForJson
 {
-    public List<Item> items;
+    public List<Item> items = new List<Item>();
 }
 
 [SerializeField]
@@ -62,6 +62,7 @@ public class Inventory//데이터만 가지고 있음
                 return;
             }
         }
+        item.itemCount = 1;
         items.Add(items.Count, item);
 
 
@@ -86,6 +87,7 @@ public class Inventory//데이터만 가지고 있음
                 return;
             }
         }
+        item.itemCount = 1;
         questItems.Add(questItems.Count, item);
     }
     public void RemoveItemFromList(Food item)//아이템을 인벤토리에서 제거

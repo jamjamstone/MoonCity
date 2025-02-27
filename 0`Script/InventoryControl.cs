@@ -4,6 +4,7 @@ using UnityEngine;
 //using UnityEngine;
 using System.IO;
 using UnityEngine.UI;
+using TMPro;
 
 
 
@@ -15,6 +16,8 @@ public class InventoryControl : MonoBehaviour// ÀÎº¥Åä¸® ÄÁÆ®·ÑÀº ÀÎº¥Åä¸®¸¦ ±×¸
     public GameObject foodPanel;
     public GameObject questPanel;
     public GameObject foodPrefab;
+    public TMP_Text flagNum;
+
     //bool isInvnetoryOpen
     // Start is called before the first frame update
     void Start()
@@ -26,6 +29,7 @@ public class InventoryControl : MonoBehaviour// ÀÎº¥Åä¸® ÄÁÆ®·ÑÀº ÀÎº¥Åä¸®¸¦ ±×¸
         //GameManager.Instance?.OnOpenInventoryButtonClick?.AddListener(DrawInventory);
         GameManager.Instance.GameDataChange += UpdateInventory;
         GameManager.Instance.OnUseFoodButtonClick.AddListener(UseFood);
+        
 
         //GameManager.Instance?.OnOpenInventoryButtonClick?.AddListener(DecideOpen);
 
@@ -36,10 +40,10 @@ public class InventoryControl : MonoBehaviour// ÀÎº¥Åä¸® ÄÁÆ®·ÑÀº ÀÎº¥Åä¸®¸¦ ±×¸
     }
 
     // Update is called once per frame
-    void Update()
-    {
-
-    }
+    //void Update()
+    //{
+    //
+    //}
     public void UpdateInventory(GameData gamedata)
     {
         Debug.Log("upadate inven");
@@ -50,7 +54,9 @@ public class InventoryControl : MonoBehaviour// ÀÎº¥Åä¸® ÄÁÆ®·ÑÀº ÀÎº¥Åä¸®¸¦ ±×¸
     {
         //playerInventory.UseItem(0);
         GameManager.Instance.GameData.inventory.UseItem(0);
-        GameManager.Instance.GameDataChanged();
+        Debug.Log(GameManager.Instance.GameData.inventory.items[0].itemCount);
+        GameManager.Instance.PlayerHpChanged();
+        UpdateInventory(GameManager.Instance.GameData);
 
 
 
@@ -59,8 +65,9 @@ public class InventoryControl : MonoBehaviour// ÀÎº¥Åä¸® ÄÁÆ®·ÑÀº ÀÎº¥Åä¸®¸¦ ±×¸
     public void OpenInventory()
     {
         //Debug.Log("openinven");
-        Debug.Log(playerInventory.items[0].itemCount);
+       // Debug.Log(playerInventory.items[0].itemCount);
         gameObject.SetActive(true);
+        StartCoroutine(ShowFlag());
     }
     public void SaveInventoryToJson()
     {
@@ -89,7 +96,24 @@ public class InventoryControl : MonoBehaviour// ÀÎº¥Åä¸® ÄÁÆ®·ÑÀº ÀÎº¥Åä¸®¸¦ ±×¸
 
 
     }
-    
+    IEnumerator ShowFlag()
+    {
+        while (true)
+        {
+            int num = 0;
+            for (int i = 0; i < GameManager.endingFlags.Length; i++)
+            {
+                if (GameManager.endingFlags[i] == true)
+                {
+                    num++;
+                }
+            }
+            string text = "Gathering Key " + num;
+            flagNum.text = text;
+
+            yield return new WaitForSeconds(1f);   
+        }
+    }
 
     public void ClearInventory()
     {

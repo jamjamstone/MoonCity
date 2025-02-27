@@ -5,10 +5,12 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public delegate void GameDataChangeHandler(GameData gamedata);
 public delegate void PlayerDataChangeHandler(PlayerDataForSave playerData);
 public delegate void LockOnMonsterHandler(Transform Monster);
+public delegate void PlayerHitHandler(float playerNowHp);
 
 //public static class GameDataMember
 //{
@@ -43,6 +45,7 @@ public class GameManager : MonoBehaviour
     public event GameDataChangeHandler GameDataChange;
     public event PlayerDataChangeHandler PlayerDataChange;
     public event LockOnMonsterHandler LockOnMonsterUpdate;
+    public event PlayerHitHandler PlayerHPUpdate;
     //public Inventory inventory;
     public List<IInteractable> interactables=new List<IInteractable>();
     
@@ -79,7 +82,17 @@ public class GameManager : MonoBehaviour
 
     public static bool isInventoryOpen = false;
     public static bool isCanInteract = false;
+    public static bool isPlayerHit = false;
+    public static bool isDodge = false;
+    public static bool isBlock = false;
+    public static bool isPlayerAttack = false;
+    public static bool isPlayerDeath = false;
 
+    public static bool[] endingFlags;
+    public static bool EndingFlag1 = false;
+    public static bool EndingFlag2 = false;
+    public static bool EndingFlag3 = false;
+    public static bool EndingFlag4 = false;
 
 
     public static GameManager Instance
@@ -125,6 +138,8 @@ public class GameManager : MonoBehaviour
         playerDataPath= Path.Combine(Application.dataPath+"/Data/", "playerData.json");
         FirstStartGameDataSet();
         LockOnMonsterUpdate += DeleteMonsterAtLockOnRecord;
+        endingFlags=new bool[4];
+        
         inventoryForJson = new InventoryForJson();
         //OnLockOnMonsterDead.AddListener(DeleteMonsterAtLockOnRecord());
         //GameDataChangeHandler += GameDataChanged();
@@ -140,6 +155,13 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         //Debug.Log("exist");
+    }
+    IEnumerator Hitduration()
+    {
+        yield return new WaitForSeconds(1f);
+        isPlayerHit= false;
+
+
     }
 
     public void LockOnDead(Transform monster)
@@ -163,6 +185,10 @@ public class GameManager : MonoBehaviour
     {
         PlayerDataChange?.Invoke(gameData.playerData);
     }
+    
+
+
+
     public void PlayerDead()
     {
         OnPlayerDie?.Invoke();
@@ -171,7 +197,7 @@ public class GameManager : MonoBehaviour
     {
         foreach(var item in gameData.inventory.items)
         {
-            inventoryForJson.items.Add(item.Value);
+            inventoryForJson.items.Add(item.Value);//error
         }
         foreach (var item in gameData.inventory.questItems)
         {
@@ -197,11 +223,22 @@ public class GameManager : MonoBehaviour
     {
         if (File.Exists(playerDataPath))
         {
-            Debug.Log("savefile exist");
+
+            //Debug.Log("savefile exist");
             string json=File.ReadAllText(playerDataPath);
             gameData.playerData = JsonUtility.FromJson<PlayerDataForSave>(json);
-            Debug.Log(gameData.playerData.playerPosition);
+            if (isPlayerDeath == true)
+            {
+                gameData.playerData.playerNowHp = gameData.playerData.playerMaxHp;
+                PlayerHPUpdate?.Invoke(gameData.playerData.playerMaxHp);
+                
+                //gameData.playerData.playerNowHp = ;
+                isPlayerDeath = false;
+                Time.timeScale = 1;
+            }
+            //Debug.Log(gameData.playerData.playerPosition);
             GameDataChanged();
+            
         }
         else
         {
@@ -223,18 +260,45 @@ public class GameManager : MonoBehaviour
     int hitnum = 0;
     public void PlayerHit(float damage)
     {
-       gameData.playerData.playerNowHp-=damage;//gameData
-        hitnum++;
-        Debug.Log(hitnum);
+        if (isDodge == true)
+        {
+            Debug.Log("Dodge");
+            gameData.playerData.playerNowHp -= 0;//회피중이면 데미지 0
+        }
+        else if (isBlock==true)
+        {
+            Debug.Log("Block");
+            gameData.playerData.playerNowHp -= damage/2;
+        }
+        else
+        {
+            
+            gameData.playerData.playerNowHp -= damage;
+            OnPlayerHit?.Invoke();
+        }
+        if(gameData.playerData.playerNowHp < 0)
+        {
+            isPlayerDeath=true;
+            Time.timeScale = 0;
+            OnPlayerDie?.Invoke();
+            
+        }
+        //hitnum++;
+        //Debug.Log(hitnum);
+        StartCoroutine(Hitduration());
         if (gameData == null)
         {
-            Debug.Log("gamedatanull");
+            //Debug.Log("gamedatanull");
         }
-        PlayerDataChanged();
+        PlayerHPUpdate?.Invoke(gameData.playerData.playerNowHp);
 
         //OnPlayerHit?.Invoke();
 
 
+    }
+    public void PlayerHpChanged()
+    {
+        PlayerHPUpdate?.Invoke(gameData.playerData.playerNowHp);
     }
 
     public void InventoryButtonPressed()
@@ -264,6 +328,9 @@ public class GameManager : MonoBehaviour
         GameDataChanged();
     }
 
-
+    public void Quit()
+    {
+        var oper = SceneManager.LoadSceneAsync("Title");
+    }
 
 }
