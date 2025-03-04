@@ -330,7 +330,7 @@ public class GameManager : MonoBehaviour
 
     public void Quit()
     {
-        var oper = SceneManager.LoadSceneAsync("Title");
+        SceneManager.LoadScene("Title");
     }
 
 }
